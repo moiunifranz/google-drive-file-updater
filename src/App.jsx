@@ -30,6 +30,9 @@ export function App() {
   const {
     soundEnabled,
     toggleSound,
+    volume,
+    setVolume,
+    testSound,
     playBatchResultSound,
     resumeAudio
   } = useSoundNotification();
@@ -199,6 +202,9 @@ export function App() {
         onToggleTheme={toggleTheme}
         soundEnabled={soundEnabled}
         onToggleSound={toggleSound}
+        volume={volume}
+        onVolumeChange={setVolume}
+        onTestSound={testSound}
         onScanDrive={handleAnalyzeFolder}
         onLogout={() => {
           logout();

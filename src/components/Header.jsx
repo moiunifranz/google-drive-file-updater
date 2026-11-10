@@ -11,7 +11,8 @@ import {
   Sun,
   Moon,
   Volume2,
-  VolumeX
+  VolumeX,
+  Play
 } from 'lucide-react';
 import { DRIVE_CONFIG } from '../config/driveConfig';
 
@@ -30,7 +31,10 @@ export function Header({
   onLogout,
   onOpenHistory,
   soundEnabled = true,
-  onToggleSound
+  onToggleSound,
+  volume = 0.5,
+  onVolumeChange,
+  onTestSound
 }) {
   const isDark = theme === 'dark';
   const displayFolderName = activeFolderName || rootName || DRIVE_CONFIG.DEFAULT_ROOT_NAME || 'ver_act';
@@ -133,20 +137,54 @@ export function Header({
               )}
             </button>
 
-            {/* Botón Notificaciones Sonoras (Visible siempre) */}
-            <button
-              type="button"
-              onClick={onToggleSound}
-              className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
-              title={soundEnabled ? 'Silenciar notificaciones' : 'Activar notificaciones'}
-              aria-label={soundEnabled ? 'Silenciar notificaciones' : 'Activar notificaciones'}
-            >
-              {soundEnabled ? (
-                <Volume2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              ) : (
-                <VolumeX className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-              )}
-            </button>
+            {/* Controles de Notificaciones Sonoras y Volumen */}
+            <div className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700/80 transition-colors">
+              {/* Botón Silenciar / Activar */}
+              <button
+                type="button"
+                onClick={onToggleSound}
+                className="p-1 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg transition-colors"
+                title={soundEnabled ? 'Silenciar notificaciones' : 'Activar notificaciones'}
+                aria-label={soundEnabled ? 'Silenciar notificaciones' : 'Activar notificaciones'}
+              >
+                {soundEnabled ? (
+                  <Volume2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                ) : (
+                  <VolumeX className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                )}
+              </button>
+
+              {/* Control Deslizante de Volumen (0 % a 100 %) */}
+              <div 
+                className="flex items-center gap-1.5"
+                title={`Volumen: ${Math.round(volume * 100)}%`}
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={Math.round(volume * 100)}
+                  onChange={(e) => onVolumeChange && onVolumeChange(Number(e.target.value) / 100)}
+                  className="w-14 sm:w-20 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-blue-500"
+                  aria-label="Control de volumen de notificaciones"
+                />
+                <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 w-7 text-right select-none hidden sm:inline-block">
+                  {Math.round(volume * 100)}%
+                </span>
+              </div>
+
+              {/* Botón Probar Sonido */}
+              <button
+                type="button"
+                onClick={onTestSound}
+                className="p-1 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-colors"
+                title="Probar sonido de confirmación"
+                aria-label="Probar sonido de confirmación"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+              </button>
+            </div>
 
             {/* Perfil de Usuario */}
             {isAuthenticated && userInfo && (

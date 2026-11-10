@@ -1,9 +1,21 @@
 /**
- * Servicio de audio utilizando Web Audio API para notificaciones sonoras.
- * Genera sonidos sintetizados profesionales sin archivos de audio externos.
+ * Servicio de audio para notificaciones sonoras.
+ * - Sonido de éxito: archivo MP3 alojado en public/sounds/success.mp3
+ *   respetando import.meta.env.BASE_URL para compatibilidad en localhost y GitHub Pages.
+ * - Sonido de advertencia: tonos sintetizados con Web Audio API con control de volumen proporcional.
  */
 
 let audioCtx = null;
+
+/**
+ * Obtiene la URL absoluta o relativa correcta para el archivo de sonido,
+ * respetando el `base` configurado en Vite (ej: '/google-drive-file-updater/' en GitHub Pages).
+ */
+export function getSuccessSoundUrl() {
+  const base = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/';
+  const cleanBase = base.endsWith('/') ? base : `${base}/`;
+  return `${cleanBase}sounds/success.mp3`;
+}
 
 /**
  * Obtiene o crea la instancia singleton de AudioContext.
@@ -58,46 +70,55 @@ function playTone(ctx, freq, startTime, duration, maxGain = 0.15, type = 'sine')
 }
 
 /**
- * Reproduce el sonido de confirmación exitosa:
- * Acorde ascendente suave de tres notas (~0.73s).
+ * Reproduce el sonido de confirmación exitosa utilizando success.mp3.
+ * 
+ * @param {number} volume Nivel de volumen de 0.0 a 1.0 (por defecto 0.5)
  */
-export function playSuccessSound() {
+export function playSuccessSound(volume = 0.5) {
   try {
     resumeAudioContext();
-    const ctx = getAudioContext();
-    if (!ctx) return;
+    const clampedVolume = Math.max(0, Math.min(1, typeof volume === 'number' ? volume : 0.5));
+    if (clampedVolume === 0) return;
 
-    const now = ctx.currentTime;
+    const soundUrl = getSuccessSoundUrl();
+    const audio = new Audio(soundUrl);
+    audio.volume = clampedVolume;
 
-    // Nota 1: D5 (587.33 Hz)
-    playTone(ctx, 587.33, now, 0.18, 0.12);
-    // Nota 2: F#5 (739.99 Hz)
-    playTone(ctx, 739.99, now + 0.09, 0.20, 0.14);
-    // Nota 3: A5 (880.00 Hz) con mayor duración
-    playTone(ctx, 880.00, now + 0.18, 0.55, 0.16);
-    // Armónico sutil para brillo cristalino: A6 (1760.00 Hz)
-    playTone(ctx, 1760.00, now + 0.18, 0.40, 0.03);
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn('No se pudo reproducir success.mp3:', err);
+      });
+    }
   } catch (err) {
-    console.warn('No se pudo reproducir la notificación sonora de éxito:', err);
+    console.warn('Error al reproducir sonido de éxito:', err);
   }
 }
 
 /**
  * Reproduce el sonido de advertencia / finalización con errores:
- * Dos tonos descendentes claros (~0.64s).
+ * Dos tonos descendentes sintetizados con Web Audio API (~0.64s),
+ * con ganancia ajustada proporcionalmente según el volumen configurado.
+ * 
+ * @param {number} volume Nivel de volumen de 0.0 a 1.0 (por defecto 0.5)
  */
-export function playWarningSound() {
+export function playWarningSound(volume = 0.5) {
   try {
     resumeAudioContext();
+    const clampedVolume = Math.max(0, Math.min(1, typeof volume === 'number' ? volume : 0.5));
+    if (clampedVolume === 0) return;
+
     const ctx = getAudioContext();
     if (!ctx) return;
 
     const now = ctx.currentTime;
+    // Escalar la ganancia con el volumen (0.5 equivale a la ganancia base de 0.15)
+    const gainScale = 0.3 * clampedVolume;
 
     // Tono 1: A4 (440.00 Hz)
-    playTone(ctx, 440.00, now, 0.18, 0.15);
+    playTone(ctx, 440.00, now, 0.18, gainScale);
     // Tono 2: F4 (349.23 Hz) - intervalo menor descendente
-    playTone(ctx, 349.23, now + 0.22, 0.42, 0.15);
+    playTone(ctx, 349.23, now + 0.22, 0.42, gainScale);
   } catch (err) {
     console.warn('No se pudo reproducir la notificación sonora de advertencia:', err);
   }
