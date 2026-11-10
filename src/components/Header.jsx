@@ -9,7 +9,9 @@ import {
   CheckCircle,
   AlertCircle,
   Sun,
-  Moon
+  Moon,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { DRIVE_CONFIG } from '../config/driveConfig';
 
@@ -26,7 +28,9 @@ export function Header({
   onToggleTheme,
   onScanDrive,
   onLogout,
-  onOpenHistory
+  onOpenHistory,
+  soundEnabled = true,
+  onToggleSound
 }) {
   const isDark = theme === 'dark';
   const displayFolderName = activeFolderName || rootName || DRIVE_CONFIG.DEFAULT_ROOT_NAME || 'ver_act';
@@ -126,6 +130,21 @@ export function Header({
                 <Sun className="w-4 h-4 text-amber-400" />
               ) : (
                 <Moon className="w-4 h-4 text-slate-600" />
+              )}
+            </button>
+
+            {/* Botón Notificaciones Sonoras (Visible siempre) */}
+            <button
+              type="button"
+              onClick={onToggleSound}
+              className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
+              title={soundEnabled ? 'Silenciar notificaciones' : 'Activar notificaciones'}
+              aria-label={soundEnabled ? 'Silenciar notificaciones' : 'Activar notificaciones'}
+            >
+              {soundEnabled ? (
+                <Volume2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               )}
             </button>
 

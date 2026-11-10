@@ -18,12 +18,21 @@ import { useDriveIndex } from './hooks/useDriveIndex';
 import { useFileMatcher } from './hooks/useFileMatcher';
 import { useUploader } from './hooks/useUploader';
 import { useTheme } from './hooks/useTheme';
+import { useSoundNotification } from './hooks/useSoundNotification';
 import { DRIVE_CONFIG } from './config/driveConfig';
 import { getFolderMetadata } from './services/driveApi';
 
 export function App() {
   // 1. Tema Claro / Oscuro
   const { theme, toggleTheme } = useTheme();
+
+  // 1.1 Notificaciones sonoras
+  const {
+    soundEnabled,
+    toggleSound,
+    playBatchResultSound,
+    resumeAudio
+  } = useSoundNotification();
 
   // 2. Autenticación Google GIS
   const {
@@ -128,18 +137,23 @@ export function App() {
 
   // Manejador para ejecutar la confirmación final de actualización
   const handleExecuteUpload = useCallback(async () => {
+    resumeAudio();
     setIsConfirmModalOpen(false);
     setGeneralError(null);
 
     const targetName = selectedFolder ? selectedFolder.name : rootFolderName;
 
     try {
-      await startUpload(localFiles, accessToken, updateMatchUploadState, targetName);
+      const taskResults = await startUpload(localFiles, accessToken, updateMatchUploadState, targetName);
+      if (taskResults && taskResults.length > 0) {
+        const wasCancelled = taskResults.wasCancelled || taskResults.some(r => r.error && r.error.toLowerCase().includes('cancelad'));
+        playBatchResultSound(taskResults, wasCancelled);
+      }
     } catch (err) {
       console.error('Error durante la subida:', err);
       setGeneralError(err.message || 'Error durante el reemplazo de archivos.');
     }
-  }, [localFiles, accessToken, updateMatchUploadState, selectedFolder, rootFolderName, startUpload]);
+  }, [localFiles, accessToken, updateMatchUploadState, selectedFolder, rootFolderName, startUpload, playBatchResultSound, resumeAudio]);
 
   // Manejador de reintento para un item individual: reintenta ÚNICAMENTE los destinos fallidos
   const handleRetryItem = useCallback((item) => {
@@ -183,6 +197,8 @@ export function App() {
         hasSelectedFolder={!!selectedFolder}
         theme={theme}
         onToggleTheme={toggleTheme}
+        soundEnabled={soundEnabled}
+        onToggleSound={toggleSound}
         onScanDrive={handleAnalyzeFolder}
         onLogout={() => {
           logout();
@@ -337,7 +353,10 @@ export function App() {
 
                       <button
                         type="button"
-                        onClick={() => setIsConfirmModalOpen(true)}
+                        onClick={() => {
+                          resumeAudio();
+                          setIsConfirmModalOpen(true);
+                        }}
                         disabled={isUploading || summary.totalSelectedTargets === 0}
                         className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >

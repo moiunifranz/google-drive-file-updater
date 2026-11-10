@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { uploadService } from '../services/uploadService';
 import { DRIVE_CONFIG } from '../config/driveConfig';
 
@@ -15,6 +15,7 @@ export function useUploader() {
   const [overallProgress, setOverallProgress] = useState(0); // 0 a 100
   const [completedTasksCount, setCompletedTasksCount] = useState(0);
   const [totalTasksCount, setTotalTasksCount] = useState(0);
+  const isCancelledRef = useRef(false);
 
   /**
    * Guarda una sesión en el historial de localStorage.
@@ -80,6 +81,7 @@ export function useUploader() {
       throw new Error('No hay destinos pendientes de reemplazo en Google Drive.');
     }
 
+    isCancelledRef.current = false;
     setIsUploading(true);
     setIsCompleted(false);
     setResults([]);
@@ -149,6 +151,7 @@ export function useUploader() {
         DRIVE_CONFIG.UPLOAD_CONCURRENCY
       );
 
+      taskResults.wasCancelled = isCancelledRef.current;
       setResults(taskResults);
       setIsCompleted(true);
 
@@ -227,6 +230,7 @@ export function useUploader() {
    * Cancela todas las subidas en progreso.
    */
   const cancelAll = useCallback(() => {
+    isCancelledRef.current = true;
     uploadService.cancelAll();
     setIsUploading(false);
   }, []);
@@ -241,6 +245,7 @@ export function useUploader() {
     startUpload,
     retryTask,
     cancelAll,
-    resetCompleted: () => setIsCompleted(false)
+    resetCompleted: () => setIsCompleted(false),
+    isCancelled: () => isCancelledRef.current
   };
 }
